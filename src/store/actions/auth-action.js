@@ -22,7 +22,7 @@ export const register = (data) => {
             const data = await registerUser()
             const uid = data?.localId;
             const isAdmin = true;
-            localStorage.setItem("uid",uid)
+            localStorage.setItem("admin-uid",uid)
             localStorage.setItem("isAdmin",isAdmin)
             
         }catch(error){

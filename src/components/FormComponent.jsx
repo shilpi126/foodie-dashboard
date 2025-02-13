@@ -1,50 +1,76 @@
-
 import React, { useState } from 'react'
+
 import { useDispatch } from 'react-redux';
 import { createRecipe } from '../store/actions/recipe-action';
-
 const initialData =  {
         title:"",
         ingredient:"",
         price:"",
         category:"",
-        images:[],
-
+        images:"",
+        
     }
 
+    
+
 const FormComponent = () => {
-    const [imagePreviews, setImagePreviews] = useState([]);
+    const [imagePreviews, setImagePreviews] = useState("");
     const [recipeData, setRecipeData] = useState(initialData)
     const dispatch = useDispatch()
-    const handleChange = (e) => {
-        const { id, value, files } = e.target;
 
-        if (id === "images" && files) {
-            const selectedFiles = Array.from(files); 
-            const previewUrls = selectedFiles.map((file) =>
-            URL.createObjectURL(file)
-            );
+    const uploadFileData = async (file) => {
+     try{
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", "images-file"); 
+        formData.append("cloud_name", "deb3zjo1c");
+    
+        const response = await fetch("https://api.cloudinary.com/v1_1/deb3zjo1c/image/upload", {
+            method: "POST",
+            body: formData,
+        });
+    
+        const data = await response.json();
+        console.log(data)
+        return data.secure_url; 
+     }catch(e){
+        console.log(e)
+     }
+    };
+    
+
+
+
+
+
+const handleChange = async(e) => {
+  try{
+    const { id, value, files } = e.target;
+    if (files && files[0]) {
+        const file = files[0];
+        console.log(file);
         
-            setImagePreviews((prevPreviews) => [...prevPreviews, ...previewUrls]);
         
-            setRecipeData((prevData) => ({
-                ...prevData,
-                images:[...prevData.images,...previewUrls]
-                
-            }));
-            
-        }else{
+        const imageUrl =  await uploadFileData(file);
+
+        console.log("Uploaded Image URL:", imageUrl);
+
+        setRecipeData((prevData) => ({
+            ...prevData,
+            images: imageUrl, 
+        }));
         
+        setImagePreviews(imageUrl); 
+    } else {
         setRecipeData((prevData) => ({
             ...prevData,
             [id]: value,
         }));
-        }
-
-        
-    
-    };
-    
+    }
+  }catch(e){
+    console.log(e)
+  }
+};
 
 
     const handleFormSubmit = (e) => {
@@ -54,12 +80,13 @@ const FormComponent = () => {
         dispatch(createRecipe(recipeData))
 
         setRecipeData({
-            
+            title:"",
+            price:"",
+            ingredient:"",
             category: "",
             images: "", 
         });
-
-        setImagePreviews([]);
+        setImagePreviews("");
         document.getElementById("images").value = null;
 
     }
@@ -67,10 +94,11 @@ const FormComponent = () => {
 
 return (
     <React.Fragment>
-    <h1 className='text-center m-4 text-xl '>Create Recipe</h1>
+    <div className='flex  flex-col   w-[80%] h-[100%] '>
+    <h1 className='text-center m-4 text-2xl font-medium text-slate-950 '>Create Recipe</h1>
         
-     <div className='flex justify-center w-[100%] h-[100%] '>
-     <form onSubmit={handleFormSubmit} className='p-4 w-[80%] h-[65%] shadow-md shadow-slate-600 rounded-lg flex flex-wrap justify-between  '>
+
+    <form onSubmit={handleFormSubmit} className='p-4 w-[100%] h-[65%] shadow-lg shadow-slate-800 rounded-lg flex flex-wrap justify-between  '>
     
     <div className='h-16 mb-2  w-[45%] '>
         <label htmlFor="title" >Title</label>
@@ -80,6 +108,7 @@ return (
             value={recipeData.title}
             placeholder="Enter Title..."
             onChange={handleChange}
+            required
             className="text-black h-10 p-2  outline-none w-[100%] rounded-md border-2 border-slate-300 "
         />
         
@@ -94,6 +123,7 @@ return (
             value={recipeData.price}
             placeholder="Enter Price..."
             onChange={handleChange}
+            required
             className="border-2 border-slate-300 p-2 h-10 outline-none w-[100%] rounded-md"
         />
         
@@ -105,10 +135,11 @@ return (
         id='category'
         value={recipeData.category}
         onChange={handleChange}
+        required
         className="border-2 border-slate-300 h-10 outline-none w-[100%] rounded-md"
         >
             <option value="" disabled>Select Category</option>
-            <option value="appetizers">Appetizers</option>
+            <option value="fast food">Fast Food</option>
             <option value="main courses">Main Courses</option>
             <option value="desserts">Desserts</option>
         </select>
@@ -123,6 +154,7 @@ return (
             value={recipeData.ingredient}
             placeholder="Enter Price..."
             onChange={handleChange}
+            required
             className="border-2 border-slate-300 p-2 h-10 outline-none w-[100%] rounded-md"
         />
         
@@ -133,6 +165,7 @@ return (
         <input
             type="file"
             id="images"
+            required
             placeholder="Upload Recipe Images..."
             onChange={handleChange}
             className="border-2 border-slate-300 h-10  outline-none w-[100%] rounded-md"
@@ -141,28 +174,31 @@ return (
     <div className="text-sm flex">
     <h3>Selected Files:</h3>
     <div className=" mt-2">
-        {imagePreviews && imagePreviews.map((url, index) => (
-            <div key={index} className="ml-2 mb-2 ">
+
+        {imagePreviews && <div  className="ml-2 mb-2 ">
             <img
-                src={url}
+                src={imagePreviews}
                 alt="img"
                 className="w-16 h-10 rounded-md border-2 border-orange-600"
             />
-            </div>
-        ))}
+            </div>}
+    
     </div>
     </div>
-</div>
-
+    </div>
     <button 
         type="submit" 
-        className="bg-slate-700 w-[45%] h-10 mt-6 text-center text-xl rounded-md text-white "
-    >Create recipe</button>
-</form>
-</div>
+        className="bg-slate-900 w-[45%] h-10 mt-6 text-center text-xl rounded-md text-white "
+    >
+        Create recipe
+    </button>
+    </form>
 
+    </div>
+    
     </React.Fragment>
     )
-}
+        }
+
 
 export default FormComponent
